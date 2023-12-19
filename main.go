@@ -30,6 +30,14 @@ func main() {
 			fmt.Printf("Error on send image %v\n", err)
 		}
 	})
+	mux.HandleFunc("/gg-dns", func(writer http.ResponseWriter, request *http.Request) {
+		domain := request.URL.Query().Get("d")
+		dc := g.DrawGGDns(domain)
+		err := png.Encode(writer, dc.Image())
+		if err != nil {
+			fmt.Printf("Error on send image %v\n", err)
+		}
+	})
 	//dc := g.Draw("gems")
 	//
 	//dc.SavePNG("/Users/i.nedzvetskiy/go/src/dns-image-gen/out.png")

@@ -17,7 +17,16 @@ type Grapher struct {
 	bgRare   image.Image
 	bgSuper  image.Image
 
+	bgGG2   image.Image
+	bgGG3   image.Image
+	bgGG4   image.Image
+	bgGG5   image.Image
+	bgGG6n8 image.Image
+	bgGG9p  image.Image
+
 	font *truetype.Font
+
+	ggFont *truetype.Font
 }
 
 func NewGrapher(pathPrefix string) *Grapher {
@@ -31,7 +40,15 @@ func NewGrapher(pathPrefix string) *Grapher {
 		bgRare:   loadImage(pathPrefix + "/rare.png"),
 		bgSuper:  loadImage(pathPrefix + "/super.png"),
 
-		font: LoadFont(pathPrefix + "/JetBrainsMono-ExtraBold.ttf"),
+		bgGG2:   loadImage(pathPrefix + "/2.png"),
+		bgGG3:   loadImage(pathPrefix + "/3.png"),
+		bgGG4:   loadImage(pathPrefix + "/4.png"),
+		bgGG5:   loadImage(pathPrefix + "/5.png"),
+		bgGG6n8: loadImage(pathPrefix + "/6-8.png"),
+		bgGG9p:  loadImage(pathPrefix + "/9p.png"),
+
+		font:   LoadFont(pathPrefix + "/JetBrainsMono-ExtraBold.ttf"),
+		ggFont: LoadFont(pathPrefix + "/SF-Pro-Rounded-Bold.ttf"),
 	}
 }
 
@@ -115,4 +132,57 @@ func (g *Grapher) getBox(w int, h int) *gg.Context {
 	res.Scale(rZoom, rZoom)
 	res.DrawImage(out.Image(), 0, 0)
 	return res
+}
+
+func (g *Grapher) DrawGGDns(domain string) *gg.Context {
+	dc := gg.NewContext(1024, 1024)
+	dc.SetColor(color.Black)
+
+	domainLen := len(domain)
+
+	if domainLen <= 2 {
+		dc.DrawImage(g.bgGG2, 0, 0)
+	} else if domainLen <= 3 {
+		dc.DrawImage(g.bgGG3, 0, 0)
+	} else if domainLen <= 4 {
+		dc.DrawImage(g.bgGG4, 0, 0)
+	} else if domainLen <= 5 {
+		dc.DrawImage(g.bgGG5, 0, 0)
+	} else if domainLen <= 8 {
+		dc.DrawImage(g.bgGG6n8, 0, 0)
+	} else {
+		dc.DrawImage(g.bgGG9p, 0, 0)
+	}
+
+	domainName := "@" + domain
+
+	left := 60
+	shadowWidth := 120 - left
+
+	canvasWith := dc.Width()
+
+	fontSize := float64(46)
+	dc.SetFontFace(SizedFont(g.ggFont, fontSize*2))
+	w, _ := dc.MeasureString(domainName)
+
+	for int(w) > canvasWith-left*4 && fontSize > 20 {
+		fontSize -= 2
+		dc.SetFontFace(SizedFont(g.ggFont, fontSize*2))
+		w, _ = dc.MeasureString(domainName)
+	}
+
+	for int(w) > canvasWith-left*4 && len(domainName) > 20 {
+		middle := len(domainName) / 2
+		left := domainName[:middle-5]
+		right := domainName[middle+5:]
+		domainName = left + "..." + right
+		w, _ = dc.MeasureMultilineString(domainName, 1)
+	}
+
+	bg := g.getBox(int(int(w)+left*4+shadowWidth*2), 470)
+	dc.DrawImageAnchored(bg.Image(), 512, 719, .5, .5)
+	dc.DrawStringAnchored(domainName, 512, 719-fontSize/2.25, 0.5, 0.5)
+	//dc.DrawStringAnchored(domainName, 512, 512-fontSize/2.25, 0.5, 0.5)
+
+	return dc
 }
